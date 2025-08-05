@@ -30,7 +30,6 @@ def schedule_auto_exit():
 twitch_miner = TwitchChannelPointsMiner(
     username=USERNAME,
     password=PASSWORD,
-    cookies_path=f"cookies/{USERNAME}.pkl",
     claim_drops_startup=True,
     priority=[Priority.STREAK, Priority.DROPS, Priority.ORDER],
     enable_analytics=False,
