@@ -1,1 +1,1 @@
-worker: python3 /usr/src/app/run.py
+﻿worker: python3 run.py
