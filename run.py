@@ -3,6 +3,7 @@ import logging
 import os
 import threading
 import sys
+import time
 from colorama import Fore
 from TwitchChannelPointsMiner import TwitchChannelPointsMiner
 from TwitchChannelPointsMiner.logger import LoggerSettings, ColorPalette
@@ -14,18 +15,39 @@ from TwitchChannelPointsMiner.classes.entities.Bet import (
 from TwitchChannelPointsMiner.classes.entities.Streamer import Streamer, StreamerSettings
 
 USERNAME = "mat_1234555666666"
-PASSWORD = None
-AUTO_EXIT_MINUTES = int(os.getenv("AUTO_EXIT_MINUTES", "8"))
+PASSWORD = None  # on utilise le cookie .pkl
+CHECK_INTERVAL = int(os.getenv("CHECK_INTERVAL", "120"))          # toutes les 2 min
+MAX_IDLE_MINUTES = int(os.getenv("MAX_IDLE_MINUTES", "10"))       # si 10 min sans live -> stop
+HARD_MAX_MINUTES = int(os.getenv("HARD_MAX_MINUTES", "30"))       # coupe dur à 30 min max
 
-def schedule_auto_exit():
-    if AUTO_EXIT_MINUTES > 0:
-        def _exit():
-            print(f"[INFO] Arrêt automatique après {AUTO_EXIT_MINUTES} minutes.")
+start_time = time.time()
+last_online_time = time.time()
+
+def watchdog():
+    global last_online_time
+    while True:
+        # Coupe dur pour éviter de consommer trop en cas de bug
+        if time.time() - start_time > HARD_MAX_MINUTES * 60:
+            print(f"[INFO] Arrêt dur après {HARD_MAX_MINUTES} minutes (sécurité).")
             sys.stdout.flush()
             os._exit(0)
-        t = threading.Timer(AUTO_EXIT_MINUTES * 60, _exit)
-        t.daemon = True
-        t.start()
+
+        # Détermine si au moins un streamer est en ligne
+        try:
+            any_online = any(getattr(s, "online", False) for s in twitch_miner.streamers)
+        except Exception:
+            any_online = False
+
+        if any_online:
+            last_online_time = time.time()
+        else:
+            idle_secs = time.time() - last_online_time
+            if idle_secs > MAX_IDLE_MINUTES * 60:
+                print(f"[INFO] Aucun live depuis {MAX_IDLE_MINUTES} min → arrêt pour économiser les heures.")
+                sys.stdout.flush()
+                os._exit(0)
+
+        time.sleep(CHECK_INTERVAL)
 
 twitch_miner = TwitchChannelPointsMiner(
     username=USERNAME,
@@ -77,8 +99,10 @@ twitch_miner = TwitchChannelPointsMiner(
     ),
 )
 
-schedule_auto_exit()
+# Surveillant en arrière-plan
+threading.Thread(target=watchdog, daemon=True).start()
 
+# Lancement du bot
 twitch_miner.mine(
     [
         Streamer("supercatkei"),
