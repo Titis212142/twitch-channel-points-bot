@@ -1,0 +1,19 @@
+﻿name: Restart Railway Bot
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"  # toutes les 30 minutes
+  workflow_dispatch: # déclencheur manuel si besoin
+
+jobs:
+  restart:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Restart Railway service
+        run: |
+          curl -X POST "https://backboard.railway.app/graphql/v2" \
+          -H "Authorization: Bearer ${{ secrets.RAILWAY_API_TOKEN }}" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "query": "mutation { serviceRedeploy(id: \"cd5dcb0e-71f7-4e3c-bdaa-bd578c365737\") { id } }"
+          }'
