@@ -13,49 +13,23 @@ from TwitchChannelPointsMiner.classes.entities.Bet import (
 )
 from TwitchChannelPointsMiner.classes.entities.Streamer import Streamer, StreamerSettings
 
-USERNAME = "mat_1234555666666"  # ton pseudo Twitch
-PASSWORD = None  # pas besoin si cookie déjà présent
-AUTO_EXIT_MINUTES = int(os.getenv("AUTO_EXIT_MINUTES", "30"))  # arrêt sécurité max
-INACTIVITY_EXIT_MINUTES = 10  # arrêt si aucun streamer live
+USERNAME = "mat_1234555666666"
+PASSWORD = None
 
-active_streamer_detected = False
-inactivity_timer = None
+# On supprime l’arrêt d’inactivité (buggy) et on ne garde qu’un arrêt de sécurité optionnel
+# Mets 0 pour désactiver complètement (recommandé avec ton cron de 30 min)
+AUTO_EXIT_MINUTES = int(os.getenv("AUTO_EXIT_MINUTES", "0"))
 
 def schedule_auto_exit():
-    def _exit():
-        print(f"[INFO] ⏹ Arrêt automatique après {AUTO_EXIT_MINUTES} minutes.")
-        sys.stdout.flush()
-        os._exit(0)
-    t = threading.Timer(AUTO_EXIT_MINUTES * 60, _exit)
-    t.daemon = True
-    t.start()
+    if AUTO_EXIT_MINUTES > 0:
+        def _exit():
+            print(f"[INFO] ⏹ Arrêt automatique après {AUTO_EXIT_MINUTES} minutes (sécurité).")
+            sys.stdout.flush()
+            os._exit(0)
+        t = threading.Timer(AUTO_EXIT_MINUTES * 60, _exit)
+        t.daemon = True
+        t.start()
 
-def reset_inactivity_timer():
-    global inactivity_timer
-    if inactivity_timer:
-        inactivity_timer.cancel()
-    inactivity_timer = threading.Timer(INACTIVITY_EXIT_MINUTES * 60, stop_if_inactive)
-    inactivity_timer.daemon = True
-    inactivity_timer.start()
-
-def stop_if_inactive():
-    global active_streamer_detected
-    if not active_streamer_detected:
-        print(f"[INFO] 😴 Aucun streamer live depuis {INACTIVITY_EXIT_MINUTES} minutes, arrêt.")
-        sys.stdout.flush()
-        os._exit(0)
-
-def on_streamer_online(streamer, points):
-    global active_streamer_detected
-    active_streamer_detected = True
-    reset_inactivity_timer()
-
-def on_streamer_offline(streamer):
-    global active_streamer_detected
-    # Ici on ne met pas direct False, on attend que tous soient off
-    pass
-
-# Bot config
 twitch_miner = TwitchChannelPointsMiner(
     username=USERNAME,
     password=PASSWORD,
@@ -106,11 +80,8 @@ twitch_miner = TwitchChannelPointsMiner(
     ),
 )
 
-# Lancement des timers
 schedule_auto_exit()
-reset_inactivity_timer()
 
-# Lancement du bot
 twitch_miner.mine(
     [
         Streamer("supercatkei"),
