@@ -15,40 +15,27 @@ from TwitchChannelPointsMiner.classes.entities.Streamer import Streamer, Streame
 
 USERNAME = "mat_1234555666666"
 PASSWORD = None
-AUTO_EXIT_MINUTES = int(os.getenv("AUTO_EXIT_MINUTES", "30"))
-INACTIVITY_EXIT_MINUTES = 10
 
-active_streamer_detected = False
+# Sécurité : si jamais le process reste coincé, on le tue après X minutes.
+# Met 180 (3h) ou 240 (4h) si tu veux être tranquille pendant un long live.
+AUTO_EXIT_MINUTES = int(os.getenv("AUTO_EXIT_MINUTES", "180"))
 
-def on_streamer_online(streamer):
-    global active_streamer_detected
-    active_streamer_detected = True
-    print(f"[INFO] 🎯 {streamer} est en ligne, désactivation de l'arrêt d'inactivité.")
-
-def on_streamer_offline(streamer):
-    global active_streamer_detected
-    # Ne pas passer à False directement pour éviter l'arrêt si un autre est en live
-    pass
+# Désactivé : l’arrêt “inactivité” provoquait des arrêts pendant un live.
+INACTIVITY_EXIT_MINUTES = 0
 
 def schedule_auto_exit():
-    def _exit():
-        print(f"[INFO] ⏹ Arrêt automatique après {AUTO_EXIT_MINUTES} minutes.")
-        sys.stdout.flush()
-        os._exit(0)
-    t = threading.Timer(AUTO_EXIT_MINUTES * 60, _exit)
-    t.daemon = True
-    t.start()
-
-def schedule_inactivity_exit():
-    def _exit():
-        global active_streamer_detected
-        if not active_streamer_detected:
-            print(f"[INFO] 😴 Aucun streamer live, arrêt après {INACTIVITY_EXIT_MINUTES} minutes d’inactivité.")
+    if AUTO_EXIT_MINUTES and AUTO_EXIT_MINUTES > 0:
+        def _exit():
+            print(f"[INFO] ⏹ Arrêt automatique après {AUTO_EXIT_MINUTES} minutes (sécurité).")
             sys.stdout.flush()
             os._exit(0)
-    t = threading.Timer(INACTIVITY_EXIT_MINUTES * 60, _exit)
-    t.daemon = True
-    t.start()
+        t = threading.Timer(AUTO_EXIT_MINUTES * 60, _exit)
+        t.daemon = True
+        t.start()
+
+# Pas d’arrêt d’inactivité, pour éviter l’extinction pendant un live.
+def schedule_inactivity_exit():
+    pass
 
 twitch_miner = TwitchChannelPointsMiner(
     username=USERNAME,
@@ -58,8 +45,6 @@ twitch_miner = TwitchChannelPointsMiner(
     enable_analytics=False,
     disable_ssl_cert_verification=False,
     disable_at_in_nickname=False,
-    on_streamer_online=on_streamer_online,
-    on_streamer_offline=on_streamer_offline,
     logger_settings=LoggerSettings(
         save=True,
         console_level=logging.INFO,
@@ -103,7 +88,6 @@ twitch_miner = TwitchChannelPointsMiner(
 )
 
 schedule_auto_exit()
-schedule_inactivity_exit()
 
 twitch_miner.mine(
     [
