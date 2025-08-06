@@ -2,7 +2,7 @@
 
 on:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "*/30 * * * *"  # toutes les 30 minutes
   workflow_dispatch:
 
 jobs:
