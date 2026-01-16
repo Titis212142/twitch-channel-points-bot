@@ -65,14 +65,24 @@ twitch_miner = TwitchChannelPointsMiner(
         telegram=Telegram(                                                          # ⚠️ OPTIONNEL: Mettez None si vous ne voulez pas Telegram
             chat_id=TELEGRAM_CHAT_ID,                                              # ⚠️ Votre Chat ID (défini dans config.py)
             token=TELEGRAM_TOKEN,                                                   # ⚠️ Token du bot Telegram (défini dans config.py)
-            events=[Events.STREAMER_ONLINE, Events.STREAMER_OFFLINE,
-                    Events.BET_LOSE, Events.CHAT_MENTION],                          # Only these events will be sent to the chat
+            events=[
+                Events.STREAMER_ONLINE, Events.STREAMER_OFFLINE,
+                Events.BET_LOSE, Events.BET_WIN, Events.CHAT_MENTION,
+                Events.GAIN_FOR_RAID, Events.GAIN_FOR_CLAIM, Events.GAIN_FOR_WATCH,
+                Events.GAIN_FOR_WATCH_STREAK, Events.BONUS_CLAIM, Events.MOMENT_CLAIM,
+                Events.DROP_CLAIM
+            ],                          # Événements à notifier (gains de points inclus)
             disable_notification=True,                                              # Revoke the notification (sound/vibration)
         ) if TELEGRAM_CHAT_ID and TELEGRAM_TOKEN else None,
         discord=Discord(
             webhook_api=DISCORD_WEBHOOK_URL,  # ⚠️ OPTIONNEL: URL du webhook Discord (défini dans config.py)
-            events=[Events.STREAMER_ONLINE, Events.STREAMER_OFFLINE,
-                    Events.BET_LOSE, Events.CHAT_MENTION],                                  # Only these events will be sent to the chat
+            events=[
+                Events.STREAMER_ONLINE, Events.STREAMER_OFFLINE,
+                Events.BET_LOSE, Events.BET_WIN, Events.CHAT_MENTION,
+                Events.GAIN_FOR_RAID, Events.GAIN_FOR_CLAIM, Events.GAIN_FOR_WATCH,
+                Events.GAIN_FOR_WATCH_STREAK, Events.BONUS_CLAIM, Events.MOMENT_CLAIM,
+                Events.DROP_CLAIM
+            ],                                  # Événements à notifier (gains de points inclus)
         ) if DISCORD_WEBHOOK_URL else None,
         webhook=Webhook(
             endpoint="https://example.com/webhook",                                                                    # ⚠️ OPTIONNEL: URL webhook générique
