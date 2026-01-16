@@ -179,11 +179,27 @@ class Twitch(object):
             GQLOperations.VideoPlayerStreamInfoOverlayChannel)
         json_data["variables"] = {"channel": streamer.username}
         response = self.post_gql_request(json_data)
-        if response != {}:
-            if response["data"]["user"]["stream"] is None:
-                raise StreamerIsOfflineException
-            else:
-                return response["data"]["user"]
+        if response == {}:
+            raise StreamerIsOfflineException
+        
+        # Handle different response formats
+        # Format 1: {'data': {'user': {...}}}
+        # Format 2: {'user': {...}}  (direct response)
+        user_data = None
+        
+        if "data" in response and "user" in response["data"]:
+            user_data = response["data"]["user"]
+        elif "user" in response:
+            # Direct format without 'data' wrapper
+            user_data = response["user"]
+        else:
+            logger.warning(f"No 'user' field in stream info response for {streamer.username}, response: {response}")
+            raise StreamerIsOfflineException
+        
+        if user_data is None or user_data.get("stream") is None:
+            raise StreamerIsOfflineException
+        
+        return user_data
 
     def check_streamer_online(self, streamer):
         if time.time() < streamer.offline_at + 60:
