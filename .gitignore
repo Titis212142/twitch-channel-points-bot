@@ -141,7 +141,7 @@ cython_debug/
 .idea/
 
 # Custom files
-run.py
+# run.py - NOT ignored, needed for Docker
 chromedriver*
 config.py  # Fichier de configuration avec identifiants sensibles
 
