@@ -220,23 +220,33 @@ class Twitch(object):
                 logger.warning(f"Empty response from GraphQL for streamer: {streamer_username} after {retry_count + 1} attempts")
                 raise StreamerDoesNotExistException
             
-            if "data" not in json_response:
+            # Handle different response formats
+            # Format 1: {'data': {'user': {'id': '...'}}}
+            # Format 2: {'user': {'id': '...'}}  (direct response)
+            user_data = None
+            
+            if "data" in json_response and "user" in json_response["data"]:
+                user_data = json_response["data"]["user"]
+            elif "user" in json_response:
+                # Direct format without 'data' wrapper
+                user_data = json_response["user"]
+            else:
                 if attempt < retry_count:
-                    logger.debug(f"No 'data' field for {streamer_username}, retrying ({attempt + 1}/{retry_count})...")
+                    logger.debug(f"No 'data' or 'user' field for {streamer_username}, retrying ({attempt + 1}/{retry_count})...")
                     time.sleep(random.uniform(0.5, 1.5))
                     continue
-                logger.warning(f"No 'data' field in response for streamer: {streamer_username}, response: {json_response}")
+                logger.warning(f"No 'data' or 'user' field in response for streamer: {streamer_username}, response: {json_response}")
                 raise StreamerDoesNotExistException
                 
-            if "user" not in json_response["data"]:
-                logger.warning(f"No 'user' field in response for streamer: {streamer_username}")
-                raise StreamerDoesNotExistException
-                
-            if json_response["data"]["user"] is None:
+            if user_data is None:
                 logger.info(f"Streamer {streamer_username} not found (user is None) - streamer may not exist or account may be suspended")
                 raise StreamerDoesNotExistException
             
-            channel_id = json_response["data"]["user"]["id"]
+            if "id" not in user_data:
+                logger.warning(f"No 'id' field in user data for streamer: {streamer_username}, user_data: {user_data}")
+                raise StreamerDoesNotExistException
+            
+            channel_id = user_data["id"]
             logger.debug(f"Found channel_id {channel_id} for streamer {streamer_username}")
             return channel_id
         
