@@ -8,8 +8,12 @@ TWITCH_PASSWORD = "votre_mot_de_passe"  # Ou laissez "" pour saisie interactive
 
 # Optionnel : Notifications
 # Telegram
-TELEGRAM_CHAT_ID = None  # Votre Chat ID (obtenez-le avec @getmyid_bot)
-TELEGRAM_TOKEN = None     # Token du bot Telegram (obtenez-le avec @BotFather)
+# Pour obtenir votre Chat ID :
+#   1. Cherchez @userinfobot ou @getidsbot sur Telegram
+#   2. Cliquez sur "Start" - le bot vous donnera votre Chat ID (un nombre)
+#   3. Ou visitez : https://api.telegram.org/botVOTRE_TOKEN/getUpdates
+TELEGRAM_CHAT_ID = None  # Votre Chat ID (nombre entier, ex: 123456789)
+TELEGRAM_TOKEN = None     # Token du bot Telegram (obtenu avec @BotFather)
 
 # Discord
 DISCORD_WEBHOOK_URL = None  # URL du webhook Discord
