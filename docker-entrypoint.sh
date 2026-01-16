@@ -1,6 +1,18 @@
 #!/bin/bash
 # Docker entrypoint script to create config.py from environment variables if needed
 
+# Check if required environment variables are set
+if [ -z "$TWITCH_USERNAME" ]; then
+    echo "❌ ERROR: TWITCH_USERNAME environment variable is not set!"
+    echo "📝 Please set the following environment variables:"
+    echo "   - TWITCH_USERNAME (required)"
+    echo "   - TWITCH_PASSWORD (optional, will be asked interactively if not set)"
+    echo ""
+    echo "Example:"
+    echo "   docker run -e TWITCH_USERNAME=your_username ..."
+    exit 1
+fi
+
 # Create config.py from environment variables if it doesn't exist
 if [ ! -f /usr/src/app/config.py ]; then
     echo "Creating config.py from environment variables..."
@@ -30,10 +42,13 @@ def format_value(value):
         return "None"
     return f'"{value}"'
 
+username = os.getenv('TWITCH_USERNAME', '')
+password = os.getenv('TWITCH_PASSWORD', '')
+
 with open('/usr/src/app/config.py', 'w') as f:
     f.write(config_content.format(
-        username=os.getenv('TWITCH_USERNAME', ''),
-        password=os.getenv('TWITCH_PASSWORD', ''),
+        username=username,
+        password=password,
         telegram_chat_id=format_value(os.getenv('TELEGRAM_CHAT_ID')),
         telegram_token=format_value(os.getenv('TELEGRAM_TOKEN')),
         discord_webhook=format_value(os.getenv('DISCORD_WEBHOOK_URL')),
@@ -46,6 +61,10 @@ with open('/usr/src/app/config.py', 'w') as f:
         pushover_token=format_value(os.getenv('PUSHOVER_TOKEN')),
         gotify_endpoint=format_value(os.getenv('GOTIFY_ENDPOINT'))
     ))
+
+print(f"✅ config.py created with username: {username}")
+if not password:
+    print("⚠️  WARNING: TWITCH_PASSWORD not set, will be asked interactively")
 PYTHON_SCRIPT
     echo "config.py created from environment variables"
 fi
