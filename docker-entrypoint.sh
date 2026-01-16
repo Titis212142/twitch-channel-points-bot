@@ -4,24 +4,49 @@
 # Create config.py from environment variables if it doesn't exist
 if [ ! -f /usr/src/app/config.py ]; then
     echo "Creating config.py from environment variables..."
-    cat > /usr/src/app/config.py << EOF
-# -*- coding: utf-8 -*-
+    python3 << 'PYTHON_SCRIPT'
+import os
+
+config_content = """# -*- coding: utf-8 -*-
 # Auto-generated from environment variables
 
-TWITCH_USERNAME = "${TWITCH_USERNAME:-}"
-TWITCH_PASSWORD = "${TWITCH_PASSWORD:-}"
-TELEGRAM_CHAT_ID = ${TELEGRAM_CHAT_ID:-None}
-TELEGRAM_TOKEN = ${TELEGRAM_TOKEN:-None}
-DISCORD_WEBHOOK_URL = ${DISCORD_WEBHOOK_URL:-None}
-WEBHOOK_ENDPOINT = ${WEBHOOK_ENDPOINT:-None}
-MATRIX_USERNAME = ${MATRIX_USERNAME:-None}
-MATRIX_PASSWORD = ${MATRIX_PASSWORD:-None}
-MATRIX_HOMESERVER = ${MATRIX_HOMESERVER:-None}
-MATRIX_ROOM_ID = ${MATRIX_ROOM_ID:-None}
-PUSHOVER_USERKEY = ${PUSHOVER_USERKEY:-None}
-PUSHOVER_TOKEN = ${PUSHOVER_TOKEN:-None}
-GOTIFY_ENDPOINT = ${GOTIFY_ENDPOINT:-None}
-EOF
+TWITCH_USERNAME = "{username}"
+TWITCH_PASSWORD = "{password}"
+TELEGRAM_CHAT_ID = {telegram_chat_id}
+TELEGRAM_TOKEN = {telegram_token}
+DISCORD_WEBHOOK_URL = {discord_webhook}
+WEBHOOK_ENDPOINT = {webhook_endpoint}
+MATRIX_USERNAME = {matrix_username}
+MATRIX_PASSWORD = {matrix_password}
+MATRIX_HOMESERVER = {matrix_homeserver}
+MATRIX_ROOM_ID = {matrix_room_id}
+PUSHOVER_USERKEY = {pushover_userkey}
+PUSHOVER_TOKEN = {pushover_token}
+GOTIFY_ENDPOINT = {gotify_endpoint}
+"""
+
+def format_value(value):
+    if value is None or value == "":
+        return "None"
+    return f'"{value}"'
+
+with open('/usr/src/app/config.py', 'w') as f:
+    f.write(config_content.format(
+        username=os.getenv('TWITCH_USERNAME', ''),
+        password=os.getenv('TWITCH_PASSWORD', ''),
+        telegram_chat_id=format_value(os.getenv('TELEGRAM_CHAT_ID')),
+        telegram_token=format_value(os.getenv('TELEGRAM_TOKEN')),
+        discord_webhook=format_value(os.getenv('DISCORD_WEBHOOK_URL')),
+        webhook_endpoint=format_value(os.getenv('WEBHOOK_ENDPOINT')),
+        matrix_username=format_value(os.getenv('MATRIX_USERNAME')),
+        matrix_password=format_value(os.getenv('MATRIX_PASSWORD')),
+        matrix_homeserver=format_value(os.getenv('MATRIX_HOMESERVER')),
+        matrix_room_id=format_value(os.getenv('MATRIX_ROOM_ID')),
+        pushover_userkey=format_value(os.getenv('PUSHOVER_USERKEY')),
+        pushover_token=format_value(os.getenv('PUSHOVER_TOKEN')),
+        gotify_endpoint=format_value(os.getenv('GOTIFY_ENDPOINT'))
+    ))
+PYTHON_SCRIPT
     echo "config.py created from environment variables"
 fi
 
