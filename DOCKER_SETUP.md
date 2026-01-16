@@ -11,13 +11,18 @@ Le Dockerfile a été mis à jour pour :
 
 ### Pour les services cloud (Railway, Render, Fly.io, etc.)
 
-Configurez ces variables d'environnement dans votre service :
+⚠️ **IMPORTANT** : Vous DEVEZ configurer les variables d'environnement dans votre service cloud !
 
-#### Obligatoire
+#### Variables OBLIGATOIRES
 ```
 TWITCH_USERNAME=mat_1234555666666
+```
+
+#### Variables OPTIONNELLES
+```
 TWITCH_PASSWORD=Flatland Cavalryhe Wool
 ```
+(Si non défini, le script demandera le mot de passe interactivement - mais cela ne fonctionne pas dans un conteneur non-interactif, donc définissez-le !)
 
 #### Optionnel (Notifications)
 ```
