@@ -604,13 +604,20 @@ class Twitch(object):
                             logger.debug(
                                 f"Sent PlaybackAccessToken request for {streamers[index]}")
 
-                            if 'data' not in responsePlaybackAccessToken:
-                                logger.error(
-                                    f"Invalid response from Twitch: {responsePlaybackAccessToken}")
+                            # Handle different response formats
+                            # Format 1: {'data': {'streamPlaybackAccessToken': {...}}}
+                            # Format 2: {'streamPlaybackAccessToken': {...}}  (direct response)
+                            if 'data' in responsePlaybackAccessToken:
+                                streamPlaybackAccessToken = responsePlaybackAccessToken["data"].get(
+                                    'streamPlaybackAccessToken', {})
+                            elif 'streamPlaybackAccessToken' in responsePlaybackAccessToken:
+                                # Direct format without 'data' wrapper
+                                streamPlaybackAccessToken = responsePlaybackAccessToken.get(
+                                    'streamPlaybackAccessToken', {})
+                            else:
+                                logger.warning(
+                                    f"Unexpected response format from Twitch: {responsePlaybackAccessToken}")
                                 continue
-
-                            streamPlaybackAccessToken = responsePlaybackAccessToken["data"].get(
-                                'streamPlaybackAccessToken', {})
                             signature = streamPlaybackAccessToken.get(
                                 "signature")
                             value = streamPlaybackAccessToken.get("value")
