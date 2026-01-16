@@ -203,31 +203,45 @@ class Twitch(object):
             except StreamerIsOfflineException:
                 streamer.set_offline()
 
-    def get_channel_id(self, streamer_username):
+    def get_channel_id(self, streamer_username, retry_count=2):
+        """Get channel ID for a streamer with retry logic"""
         json_data = copy.deepcopy(GQLOperations.GetIDFromLogin)
         json_data["variables"]["login"] = streamer_username
-        json_response = self.post_gql_request(json_data)
         
-        # Better error handling and logging
-        if json_response == {}:
-            logger.warning(f"Empty response from GraphQL for streamer: {streamer_username}")
-            raise StreamerDoesNotExistException
-        
-        if "data" not in json_response:
-            logger.warning(f"No 'data' field in response for streamer: {streamer_username}, response: {json_response}")
-            raise StreamerDoesNotExistException
+        for attempt in range(retry_count + 1):
+            json_response = self.post_gql_request(json_data)
             
-        if "user" not in json_response["data"]:
-            logger.warning(f"No 'user' field in response for streamer: {streamer_username}")
-            raise StreamerDoesNotExistException
+            # Better error handling and logging
+            if json_response == {}:
+                if attempt < retry_count:
+                    logger.debug(f"Empty response for {streamer_username}, retrying ({attempt + 1}/{retry_count})...")
+                    time.sleep(random.uniform(0.5, 1.5))
+                    continue
+                logger.warning(f"Empty response from GraphQL for streamer: {streamer_username} after {retry_count + 1} attempts")
+                raise StreamerDoesNotExistException
             
-        if json_response["data"]["user"] is None:
-            logger.info(f"Streamer {streamer_username} not found (user is None)")
-            raise StreamerDoesNotExistException
+            if "data" not in json_response:
+                if attempt < retry_count:
+                    logger.debug(f"No 'data' field for {streamer_username}, retrying ({attempt + 1}/{retry_count})...")
+                    time.sleep(random.uniform(0.5, 1.5))
+                    continue
+                logger.warning(f"No 'data' field in response for streamer: {streamer_username}, response: {json_response}")
+                raise StreamerDoesNotExistException
+                
+            if "user" not in json_response["data"]:
+                logger.warning(f"No 'user' field in response for streamer: {streamer_username}")
+                raise StreamerDoesNotExistException
+                
+            if json_response["data"]["user"] is None:
+                logger.info(f"Streamer {streamer_username} not found (user is None) - streamer may not exist or account may be suspended")
+                raise StreamerDoesNotExistException
+            
+            channel_id = json_response["data"]["user"]["id"]
+            logger.debug(f"Found channel_id {channel_id} for streamer {streamer_username}")
+            return channel_id
         
-        channel_id = json_response["data"]["user"]["id"]
-        logger.debug(f"Found channel_id {channel_id} for streamer {streamer_username}")
-        return channel_id
+        # Should not reach here, but just in case
+        raise StreamerDoesNotExistException
 
     def get_followers(
         self, limit: int = 100, order: FollowersOrder = FollowersOrder.ASC
