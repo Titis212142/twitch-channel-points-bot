@@ -40,4 +40,9 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get install -qq -y --fix-missing --no-ins
   && rm -rf /usr/share/doc/*
 
 ADD ./TwitchChannelPointsMiner ./TwitchChannelPointsMiner
+
+# Copy run.py into the image (can be overridden by volume mount)
+COPY ./run.py ./run.py
+COPY ./config.example.py ./config.example.py
+
 ENTRYPOINT [ "python", "run.py" ]
